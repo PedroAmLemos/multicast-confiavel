@@ -1,2 +1,3 @@
 # TO RUN
-- docker run --rm -it multicast:latest ./multicast fred hosts
+- docker run --rm -it --network=host multicast:latest ./multicast fred hosts
+- or create a network
