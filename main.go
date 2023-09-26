@@ -6,21 +6,36 @@ import (
 	"net"
 	"os"
 	"strings"
+	"time"
 )
 
 func startServer(ip string) {
-	ln, err := net.Listen("tcp", ip)
-	if err != nil {
-		panic(err)
-	}
-	defer ln.Close()
-	for {
-		conn, err := ln.Accept()
+	const maxRetries = 3
+	retries := 0
+
+	for retries < maxRetries {
+		ln, err := net.Listen("tcp", ip)
 		if err != nil {
-			fmt.Println("Error accepting connection:", err)
+			fmt.Printf("Error starting server: %s. Attempt %d/%d\n", err, retries+1, maxRetries)
+			retries++
+			time.Sleep(2 * time.Second)
 			continue
 		}
-		go handleConnection(conn)
+
+		defer ln.Close()
+		for {
+			conn, err := ln.Accept()
+			if err != nil {
+				fmt.Println("Error accepting connection:", err)
+				continue
+			}
+			go handleConnection(conn)
+		}
+	}
+
+	if retries == maxRetries {
+		fmt.Println("Failed to start the server after multiple attempts. Exiting.")
+		os.Exit(1)
 	}
 }
 
@@ -53,7 +68,11 @@ func sendMessage(name, recipient, content string, protocol string) {
 		fmt.Println("...recipient: all...")
 	}
 	message := fmt.Sprintf("%s %s: %s\n", protocol, name, content)
-	conn.Write([]byte(message))
+	_, err = conn.Write([]byte(message))
+	if err != nil {
+		fmt.Println("Error sending message:", err)
+		return
+	}
 	fmt.Println("...sent...")
 	fmt.Println("=====end of transmission=====")
 }
