@@ -65,6 +65,9 @@ func mainLoop(people map[string]string, name string) {
 			os.Stdout.WriteString("\x1b[3;J\x1b[H\x1b[2J")
 		case "commands":
 			printCommands()
+		case "multicast delay":
+			message := readInput("[multicast delay] Enter the message: ")
+			multicast(name, people, message)
 		default:
 			fmt.Println("command not found")
 		}

@@ -29,8 +29,4 @@ func unicast(name, recipient, content string) {
 }
 
 func multicast(name string, people map[string]string, message string) {
-	// implement a multicast protocol this will consist of sending a message to all the people in the map
-	for _, ip := range people {
-		unicast(name, ip, message)
-	}
 }
