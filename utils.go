@@ -24,7 +24,7 @@ func printStartScreen(name string, thisIP string, people map[string]string) {
 	for name, ip := range people {
 		fmt.Printf("%s: %s\n", name, ip)
 	}
-	fmt.Println("Type " + RedColor + "'commands'" + ResetColor + " to see the list of commands")
+	fmt.Println("Type " + RedColor + "'help'" + ResetColor + " to see the list of commands")
 	printHorizontalLine()
 }
 
@@ -33,6 +33,7 @@ func printCommands() {
 	fmt.Println("Type 'exit' to exit")
 	fmt.Println("Type 'list' to list all people")
 	fmt.Println("Type 'multicast' to send a message to all people")
+	fmt.Println("Type 'multicast-delay' to send a message to all people and use the delayed response handler")
 	fmt.Println("Type 'unicast' to send a message to a specific person")
 	fmt.Println("Type 'clear' to clear the screen")
 	printHorizontalLine()

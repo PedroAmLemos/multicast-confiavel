@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -26,7 +27,7 @@ func getArgs() (string, string) {
 }
 
 func readFile(fileName string) map[string]string {
-	lines := []string{}
+	var lines []string
 	hosts, _ := os.Open(fileName)
 	defer hosts.Close()
 	scanner := bufio.NewScanner(hosts)
@@ -45,29 +46,43 @@ func readFile(fileName string) map[string]string {
 
 func mainLoop(people map[string]string, name string) {
 	for {
-		command := readInput("> ")
-		switch command {
+		protocol := readInput("> ")
+		switch protocol {
 		case "exit":
 			os.Exit(0)
 		case "list":
 			for name, ip := range people {
 				fmt.Printf("%s: %s\n", name, ip)
 			}
-		case Multicast:
-			message := readInput("[multicast] Enter the message: ")
-			multicast(name, people, message)
+		case Multicast, MulticastDelay:
+			fmt.Printf("[%s] Enter the message: ", protocol)
+			message := readInput("")
+			fmt.Printf("[%s] Enter the max timeout (in seconds): ", protocol)
+			timeout := readInput("")
+			timeout = strings.TrimSpace(timeout)
+			timeoutInt, err := strconv.Atoi(timeout)
+			if err != nil {
+				fmt.Println("Error converting timeout to int:", err)
+				return
+			}
+			fmt.Printf("[%s] Enter the max attempts: ", protocol)
+			attempts := readInput("")
+			attempts = strings.TrimSpace(attempts)
+			attemptsInt, err := strconv.Atoi(attempts)
+			if err != nil {
+				fmt.Println("Error converting attempts to int:", err)
+				return
+			}
+			multicast(name, people, message, protocol, timeoutInt, attemptsInt)
 		case Unicast:
 			recipient := readInput("[unicast] Enter the name of the person: ")
 			message := readInput("[unicast] Enter the message: ")
 			recipientIP := people[recipient]
 			unicast(name, recipientIP, message)
 		case "clear":
-			os.Stdout.WriteString("\x1b[3;J\x1b[H\x1b[2J")
-		case "commands":
+			fmt.Printf("\x1b[3;J\x1b[H\x1b[2J")
+		case "help":
 			printCommands()
-		case "multicast delay":
-			message := readInput("[multicast delay] Enter the message: ")
-			multicast(name, people, message)
 		default:
 			fmt.Println("command not found")
 		}
