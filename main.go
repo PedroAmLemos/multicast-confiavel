@@ -9,6 +9,11 @@ import (
 	"time"
 )
 
+const (
+	Unicast   = "unicast"
+	Multicast = "multicast"
+)
+
 func startServer(ip string) {
 	const maxRetries = 3
 	retries := 0
@@ -59,13 +64,13 @@ func sendMessage(name, recipient, content string, protocol string) {
 		return
 	}
 	defer conn.Close()
-	fmt.Println("...connected...")
-	fmt.Printf("...protocol: %s...\n", protocol)
+	fmt.Println("... connected ...")
+	fmt.Printf("... protocol: %s ...\n", protocol)
 	switch protocol {
-	case "unicast":
-		fmt.Printf("...recipient: %s...\n", recipient)
-	case "multicast":
-		fmt.Println("...recipient: all...")
+	case Unicast:
+		fmt.Printf("... recipient: %s ...\n", recipient)
+	case Multicast:
+		fmt.Println("... recipient: all ...")
 	}
 	message := fmt.Sprintf("%s %s: %s\n", protocol, name, content)
 	_, err = conn.Write([]byte(message))
@@ -73,7 +78,7 @@ func sendMessage(name, recipient, content string, protocol string) {
 		fmt.Println("Error sending message:", err)
 		return
 	}
-	fmt.Println("...sent...")
+	fmt.Println("... sent ...")
 	fmt.Println("=====end of transmission=====")
 }
 
@@ -144,10 +149,10 @@ func mainLoop(people map[string]string, name string) {
 			for name, ip := range people {
 				fmt.Printf("%s: %s\n", name, ip)
 			}
-		case "multicast":
+		case Multicast:
 			message := readInput("[multicast] Enter the message: ")
 			multicast(name, people, message)
-		case "unicast":
+		case Unicast:
 			recipient := readInput("[unicast] Enter the name of the person: ")
 			message := readInput("[unicast] Enter the message: ")
 			recipientIP := people[recipient]
