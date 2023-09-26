@@ -3,84 +3,9 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"net"
 	"os"
 	"strings"
-	"time"
 )
-
-const (
-	Unicast   = "unicast"
-	Multicast = "multicast"
-)
-
-func startServer(ip string) {
-	const maxRetries = 3
-	retries := 0
-
-	for retries < maxRetries {
-		ln, err := net.Listen("tcp", ip)
-		if err != nil {
-			fmt.Printf("Error starting server: %s. Attempt %d/%d\n", err, retries+1, maxRetries)
-			retries++
-			time.Sleep(2 * time.Second)
-			continue
-		}
-
-		defer ln.Close()
-		for {
-			conn, err := ln.Accept()
-			if err != nil {
-				fmt.Println("Error accepting connection:", err)
-				continue
-			}
-			go handleConnection(conn)
-		}
-	}
-
-	if retries == maxRetries {
-		fmt.Println("Failed to start the server after multiple attempts. Exiting.")
-		os.Exit(1)
-	}
-}
-
-func handleConnection(conn net.Conn) {
-	defer conn.Close()
-
-	message, err := bufio.NewReader(conn).ReadString('\n')
-	if err != nil {
-		fmt.Println("Error reading message:", err)
-		return
-	}
-
-	fmt.Printf("\n======receiving message======\n%s=====end of transmission=====\n> ", message)
-}
-
-func sendMessage(name, recipient, content string, protocol string) {
-	fmt.Println("======sending transmission======")
-	conn, err := net.Dial("tcp", recipient)
-	if err != nil {
-		fmt.Println("Error connecting to recipient:", err)
-		return
-	}
-	defer conn.Close()
-	fmt.Println("... connected ...")
-	fmt.Printf("... protocol: %s ...\n", protocol)
-	switch protocol {
-	case Unicast:
-		fmt.Printf("... recipient: %s ...\n", recipient)
-	case Multicast:
-		fmt.Println("... recipient: all ...")
-	}
-	message := fmt.Sprintf("%s %s: %s\n", protocol, name, content)
-	_, err = conn.Write([]byte(message))
-	if err != nil {
-		fmt.Println("Error sending message:", err)
-		return
-	}
-	fmt.Println("... sent ...")
-	fmt.Println("=====end of transmission=====")
-}
 
 func readInput(prompt string) string {
 	fmt.Print(prompt)
@@ -116,27 +41,6 @@ func readFile(fileName string) map[string]string {
 	}
 
 	return personMap
-}
-
-func multicast(name string, people map[string]string, message string) {
-}
-
-func printStartScreen(name string, thisIP string, people map[string]string) {
-	fmt.Println("Welcome " + name)
-	fmt.Printf("Your IP is: %s\n", thisIP)
-	fmt.Println("People found in the file: ")
-	for name, ip := range people {
-		fmt.Printf("%s: %s\n", name, ip)
-	}
-	fmt.Println("Type 'commands' to see the list of commands")
-}
-
-func printCommands() {
-	fmt.Println("Type 'exit' to exit")
-	fmt.Println("Type 'list' to list all people")
-	fmt.Println("Type 'multicast' to send a message to all people")
-	fmt.Println("Type 'unicast' to send a message to a specific person")
-	fmt.Println("Type 'clear' to clear the screen")
 }
 
 func mainLoop(people map[string]string, name string) {
