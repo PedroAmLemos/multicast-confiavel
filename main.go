@@ -115,38 +115,40 @@ func printCommands() {
 	fmt.Println("Type 'clear' to clear the screen")
 }
 
+func mainLoop(people map[string]string, name string) {
+	for {
+		command := readInput("> ")
+		switch command {
+		case "exit":
+			os.Exit(0)
+		case "list":
+			for name, ip := range people {
+				fmt.Printf("%s: %s\n", name, ip)
+			}
+		case "multicast":
+			message := readInput("[multicast] Enter the message: ")
+			multicast(name, people, message)
+		case "unicast":
+			recipient := readInput("[unicast] Enter the name of the person: ")
+			message := readInput("[unicast] Enter the message: ")
+			recipientIP := people[recipient]
+			sendMessage(name, recipientIP, message, command)
+		case "clear":
+			os.Stdout.WriteString("\x1b[3;J\x1b[H\x1b[2J")
+		case "commands":
+			printCommands()
+		default:
+			fmt.Println("command not found")
+		}
+	}
+}
+
 func main() {
 	name, fileName := getArgs()
 	people := readFile(fileName)
 	thisIP := people[name]
 	delete(people, name)
 	printStartScreen(name, thisIP, people)
-	go func() {
-		for {
-			command := readInput("> ")
-			switch command {
-			case "exit":
-				os.Exit(0)
-			case "list":
-				for name, ip := range people {
-					fmt.Printf("%s: %s\n", name, ip)
-				}
-			case "multicast":
-				message := readInput("[multicast] Enter the message: ")
-				multicast(name, people, message)
-			case "unicast":
-				recipient := readInput("[unicast] Enter the name of the person: ")
-				message := readInput("[unicast] Enter the message: ")
-				recipientIP := people[recipient]
-				sendMessage(name, recipientIP, message, command)
-			case "clear":
-				os.Stdout.WriteString("\x1b[3;J\x1b[H\x1b[2J")
-			case "commands":
-				printCommands()
-			default:
-				fmt.Println("command not found")
-			}
-		}
-	}()
+	go mainLoop(people, name)
 	startServer(thisIP)
 }
