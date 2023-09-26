@@ -48,20 +48,21 @@ func handleConnection(conn net.Conn) {
 		return
 	}
 
-	parts := strings.SplitN(message, " ", 2)
-	if len(parts) < 2 {
+	parts := strings.SplitN(message, " ", 3)
+	if len(parts) < 3 {
 		fmt.Println("Received malformed message:", message)
 		return
 	}
 	protocol := parts[0]
-	actualMessage := parts[1]
+	name := parts[1]
+	actualMessage := parts[2]
 
 	fmt.Println()
 	printHorizontalLine()
 	fmt.Println(BlueColor + centerText("Received Message", 40) + ResetColor)
 	fmt.Printf("Protocol: %s\n", protocol)
-	fmt.Println("Message Content:")
-	fmt.Printf("%s", actualMessage)
+	fmt.Printf("Message Content: %s", actualMessage)
+	fmt.Printf("Sender: %s\n", name)
 	fmt.Println(BlueColor + centerText("End of Message", 40) + ResetColor)
 	printHorizontalLine()
 	fmt.Print("> ")

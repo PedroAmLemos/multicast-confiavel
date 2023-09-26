@@ -60,7 +60,7 @@ func mainLoop(people map[string]string, name string) {
 			recipient := readInput("[unicast] Enter the name of the person: ")
 			message := readInput("[unicast] Enter the message: ")
 			recipientIP := people[recipient]
-			sendMessage(name, recipientIP, message, command)
+			unicast(name, recipientIP, message)
 		case "clear":
 			os.Stdout.WriteString("\x1b[3;J\x1b[H\x1b[2J")
 		case "commands":

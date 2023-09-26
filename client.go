@@ -5,7 +5,7 @@ import (
 	"net"
 )
 
-func sendMessage(name, recipient, content string, protocol string) {
+func unicast(name, recipient, content string) {
 	printHorizontalLine()
 	fmt.Println(GreenColor + centerText("Sending Transmission", 40) + ResetColor)
 	conn, err := net.Dial("tcp", recipient)
@@ -15,14 +15,9 @@ func sendMessage(name, recipient, content string, protocol string) {
 	}
 	defer conn.Close()
 	fmt.Println("Status: Connected")
-	fmt.Printf("Protocol: %s\n", protocol)
-	switch protocol {
-	case Unicast:
-		fmt.Printf("Recipient: %s\n", recipient)
-	case Multicast:
-		fmt.Println("Recipient: All")
-	}
-	message := fmt.Sprintf("%s %s: %s\n", protocol, name, content)
+	fmt.Println("Protocol: unicast")
+	fmt.Printf("Recipient: %s\n", recipient)
+	message := fmt.Sprintf("%s %s %s\n", Unicast, name, content)
 	_, err = conn.Write([]byte(message))
 	if err != nil {
 		fmt.Println("Error sending message:", err)
@@ -34,4 +29,8 @@ func sendMessage(name, recipient, content string, protocol string) {
 }
 
 func multicast(name string, people map[string]string, message string) {
+	// implement a multicast protocol this will consist of sending a message to all the people in the map
+	for _, ip := range people {
+		unicast(name, ip, message)
+	}
 }
