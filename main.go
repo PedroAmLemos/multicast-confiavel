@@ -8,15 +8,12 @@ import (
 	"strings"
 )
 
-// startServer starts the TCP server to receive incoming messages.
 func startServer(ip string) {
 	ln, err := net.Listen("tcp", ip)
 	if err != nil {
-		fmt.Println("Error starting server:", err)
-		return
+		panic(err)
 	}
 	defer ln.Close()
-
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
@@ -27,7 +24,6 @@ func startServer(ip string) {
 	}
 }
 
-// handleConnection handles an incoming connection.
 func handleConnection(conn net.Conn) {
 	defer conn.Close()
 
@@ -37,25 +33,31 @@ func handleConnection(conn net.Conn) {
 		return
 	}
 
-	fmt.Printf("\n======receiving message======\n%s=====end of transmission=====\n", message)
+	fmt.Printf("\n======receiving message======\n%s=====end of transmission=====\n> ", message)
 }
 
-// sendMessage sends a chat message to the specified recipient.
-func sendMessage(name, recipient, content string) {
-	fmt.Println("======sending message======")
+func sendMessage(name, recipient, content string, protocol string) {
+	fmt.Println("======sending transmission======")
 	conn, err := net.Dial("tcp", recipient)
 	if err != nil {
 		fmt.Println("Error connecting to recipient:", err)
 		return
 	}
 	defer conn.Close()
-	conn.Write([]byte(name + ": " + content + "\n"))
-	fmt.Printf("======message sent to %s======\n", recipient)
-
+	fmt.Println("...connected...")
+	fmt.Printf("...protocol: %s...\n", protocol)
+	switch protocol {
+	case "unicast":
+		fmt.Printf("...recipient: %s...\n", recipient)
+	case "multicast":
+		fmt.Println("...recipient: all...")
+	}
+	message := fmt.Sprintf("%s %s: %s\n", protocol, name, content)
+	conn.Write([]byte(message))
+	fmt.Println("...sent...")
 	fmt.Println("=====end of transmission=====")
 }
 
-// readInput reads a line of input from the user.
 func readInput(prompt string) string {
 	fmt.Print(prompt)
 	reader := bufio.NewReader(os.Stdin)
@@ -63,14 +65,11 @@ func readInput(prompt string) string {
 	return strings.TrimSpace(text)
 }
 
-// function to deal with the parameters: it should expect two parameters, the name of the file and the name of the person
-// it should return both the fileName and the name of the person
 func getArgs() (string, string) {
-	// read arguments from command line
 	args := os.Args[1:]
 	if len(args) == 0 {
-		fmt.Println("Please provide an argument")
-		return "", ""
+		fmt.Println("Please provide the arguments")
+		os.Exit(1)
 	}
 	fileName := args[0]
 	name := args[1]
@@ -78,27 +77,42 @@ func getArgs() (string, string) {
 }
 
 func readFile(fileName string) map[string]string {
-	// read file
 	lines := []string{}
 	hosts, _ := os.Open(fileName)
 	defer hosts.Close()
-	// print file content
 	scanner := bufio.NewScanner(hosts)
-	// define a map to store people
 	personMap := make(map[string]string)
 
 	for scanner.Scan() {
-		// append all lines to lines
 		lines = append(lines, scanner.Text())
 	}
 	for _, line := range lines {
-		// split line by space
 		words := strings.Split(line, " ")
-		// store in the map, name is the key and ip is the value
 		personMap[words[1]] = words[0]
 	}
 
 	return personMap
+}
+
+func multicast(name string, people map[string]string, message string) {
+}
+
+func printStartScreen(name string, thisIP string, people map[string]string) {
+	fmt.Println("Welcome " + name)
+	fmt.Printf("Your IP is: %s\n", thisIP)
+	fmt.Println("People found in the file: ")
+	for name, ip := range people {
+		fmt.Printf("%s: %s\n", name, ip)
+	}
+	fmt.Println("Type 'commands' to see the list of commands")
+}
+
+func printCommands() {
+	fmt.Println("Type 'exit' to exit")
+	fmt.Println("Type 'list' to list all people")
+	fmt.Println("Type 'multicast' to send a message to all people")
+	fmt.Println("Type 'unicast' to send a message to a specific person")
+	fmt.Println("Type 'clear' to clear the screen")
 }
 
 func main() {
@@ -106,16 +120,33 @@ func main() {
 	people := readFile(fileName)
 	thisIP := people[name]
 	delete(people, name)
-	fmt.Println("this === " + thisIP)
-	for _, ip := range people {
-		fmt.Println(ip)
-	}
-	go startServer(thisIP)
-
-	for {
-		message := readInput("> ")
-		for _, ip := range people {
-			sendMessage(name, ip, message)
+	printStartScreen(name, thisIP, people)
+	go func() {
+		for {
+			command := readInput("> ")
+			switch command {
+			case "exit":
+				os.Exit(0)
+			case "list":
+				for name, ip := range people {
+					fmt.Printf("%s: %s\n", name, ip)
+				}
+			case "multicast":
+				message := readInput("[multicast] Enter the message: ")
+				multicast(name, people, message)
+			case "unicast":
+				recipient := readInput("[unicast] Enter the name of the person: ")
+				message := readInput("[unicast] Enter the message: ")
+				recipientIP := people[recipient]
+				sendMessage(name, recipientIP, message, command)
+			case "clear":
+				os.Stdout.WriteString("\x1b[3;J\x1b[H\x1b[2J")
+			case "commands":
+				printCommands()
+			default:
+				fmt.Println("command not found")
+			}
 		}
-	}
+	}()
+	startServer(thisIP)
 }
