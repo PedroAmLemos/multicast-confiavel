@@ -13,7 +13,7 @@ func centerText(text string, width int) string {
 }
 
 func printHorizontalLine() {
-	fmt.Println(CyanColor + "---------------------------------------------------" + ResetColor)
+	fmt.Println(CyanColor + "------------------------------------------------" + ResetColor)
 }
 
 func printStartScreen(name string, thisIP string, people map[string]string) {
