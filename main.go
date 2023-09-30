@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+var delay int = 0
+
 func readInput(prompt string) string {
 	fmt.Print(prompt)
 	reader := bufio.NewReader(os.Stdin)
@@ -83,6 +85,19 @@ func mainLoop(people map[string]string, name string) {
 			fmt.Printf("\x1b[3;J\x1b[H\x1b[2J")
 		case "help":
 			printCommands()
+
+		case "get-delay":
+			fmt.Println(delay)
+		case "set-delay":
+			fmt.Print("Enter the delay: ")
+			delayStr := readInput("")
+			delayInt, err := strconv.Atoi(delayStr)
+			if err != nil {
+				fmt.Println("Error converting delay to int:", err)
+				return
+			}
+			delay = delayInt
+
 		default:
 			fmt.Println("command not found")
 		}
