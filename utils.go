@@ -36,5 +36,8 @@ func printCommands() {
 	fmt.Println("Type 'multicast-delay' to send a message to all people and use the delayed response handler")
 	fmt.Println("Type 'unicast' to send a message to a specific person")
 	fmt.Println("Type 'clear' to clear the screen")
+	fmt.Println("Type 'help' to see this list of commands")
+	fmt.Println("Type 'get-delay' to get the current delay")
+	fmt.Println("Type 'set-delay' to set the current delay")
 	printHorizontalLine()
 }
