@@ -39,8 +39,7 @@ func startServer(ip string) {
 	}
 }
 
-func handleMulticast(name string, message string, protocol string, conn net.Conn, delay int) {
-	fmt.Println()
+func handleMulticast(name string, message string, protocol string, conn net.Conn) {
 	printHorizontalLine()
 	fmt.Println(BlueColor + centerText("Received Message", 40) + ResetColor)
 	fmt.Printf("Protocol: %s\n", protocol)
@@ -93,9 +92,9 @@ func handleConnection(conn net.Conn) {
 	actualMessage := parts[2]
 	switch protocol {
 	case Multicast:
-		handleMulticast(name, actualMessage, protocol, conn, 0)
+		handleMulticast(name, actualMessage, protocol, conn)
 	case MulticastDelay:
-		handleMulticast(name, actualMessage, protocol, conn, 2)
+		handleMulticast(name, actualMessage, protocol, conn)
 	case Unicast:
 		handleUnicast(name, actualMessage)
 
