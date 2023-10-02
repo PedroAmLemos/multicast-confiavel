@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-var delay int = 0
+var delay int = 2
 
 func readInput(prompt string) string {
 	fmt.Print(prompt)
