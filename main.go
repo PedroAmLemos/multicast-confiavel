@@ -21,9 +21,9 @@ func getArgs() (string, string) {
 		fmt.Println("Please provide the arguments")
 		os.Exit(1)
 	}
-	fileName := args[0]
-	name := args[1]
-	return fileName, name
+	name := args[0]
+	fileName := args[1]
+	return name, fileName
 }
 
 func readFile(fileName string) map[string]string {
