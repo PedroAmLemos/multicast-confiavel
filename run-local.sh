@@ -15,13 +15,13 @@ if [ -z "$TMUX" ]; then
     fi
 
     # Create a new window in the session and run the first command
-    tmux new-window -t multicast -n 'multicast_window' './multicast node_1 hosts'
+    tmux new-window -t multicast -n 'multicast_window' './multicast node_1 hosts.local'
 
     # Split the new window vertically and run the second command
-    tmux split-window -t multicast:multicast_window -h './multicast node_2 hosts'
+    tmux split-window -t multicast:multicast_window -h './multicast node_2 hosts.local'
 
     # Split the pane again (from the first pane) and run the third command
-    tmux split-window -t multicast:multicast_window -h './multicast node_3 hosts'
+    tmux split-window -t multicast:multicast_window -h './multicast node_3 hosts.local'
 
     # Set the layout to ensure all panes have equal width
     tmux select-layout -t multicast:multicast_window even-horizontal
@@ -33,13 +33,13 @@ else
     # Inside of tmux
 
     # Create a new window and run the first command
-    tmux new-window -n 'multicast_window' './multicast node_1 hosts'
+    tmux new-window -n 'multicast_window' './multicast node_1 hosts.local'
 
     # Split the new window vertically and run the second command
-    tmux split-window -h './multicast node_2 hosts'
+    tmux split-window -h './multicast node_2 hosts.local'
 
     # Split the pane again (from the first pane) and run the third command
-    tmux split-window -h './multicast node_3 hosts'
+    tmux split-window -h './multicast node_3 hosts.local'
 
     # Set the layout to ensure all panes have equal width
     tmux select-layout even-horizontal
