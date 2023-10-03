@@ -11,7 +11,6 @@ run: build
 clean:
 	@echo "Limpando arquivos binários..."
 	go clean
-	rm $(BINARY_NAME)
 
 all: build
 
