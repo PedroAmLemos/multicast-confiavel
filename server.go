@@ -40,12 +40,13 @@ func startServer(ip string) {
 }
 
 func handleMulticast(name string, message string, protocol string, conn net.Conn) {
+	fmt.Println()
 	printHorizontalLine()
 	fmt.Println(BlueColor + centerText("Received Message", 40) + ResetColor)
 	fmt.Printf("Protocol: %s\n", protocol)
 	fmt.Printf("Message Content: %s", message)
 	fmt.Printf("Sender: %s\n", name)
-	if delay > 0 {
+	if protocol == MulticastDelay {
 		fmt.Printf("Starting delay: %d seconds\n", delay)
 		delayTime := time.Now().Add(time.Duration(delay) * time.Second)
 		time.Sleep(time.Until(delayTime))

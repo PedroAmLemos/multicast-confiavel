@@ -30,14 +30,15 @@ func printStartScreen(name string, thisIP string, people map[string]string) {
 
 func printCommands() {
 	printHorizontalLine()
-	fmt.Println("Type 'exit' to exit")
-	fmt.Println("Type 'list' to list all people")
-	fmt.Println("Type 'multicast' to send a message to all people")
-	fmt.Println("Type 'multicast-delay' to send a message to all people and use the delayed response handler")
-	fmt.Println("Type 'unicast' to send a message to a specific person")
-	fmt.Println("Type 'clear' to clear the screen")
-	fmt.Println("Type 'help' to see this list of commands")
-	fmt.Println("Type 'get-delay' to get the current delay")
-	fmt.Println("Type 'set-delay' to set the current delay")
+	// make the commands with color
+	fmt.Println("Type '" + RedColor + "exit" + ResetColor + "' to exit")
+	fmt.Println("Type '" + RedColor + "list" + ResetColor + "' to list all people")
+	fmt.Println("Type '" + RedColor + "multicast" + ResetColor + "' to send a message to all people")
+	fmt.Println("Type '" + RedColor + "multicast-delay" + ResetColor + "' to send a message to all people and use the delayed response handler")
+	fmt.Println("Type '" + RedColor + "unicast" + ResetColor + "' to send a message to a specific person")
+	fmt.Println("Type '" + RedColor + "clear" + ResetColor + "' to clear the screen")
+	fmt.Println("Type '" + RedColor + "help" + ResetColor + "' to see this list of commands")
+	fmt.Println("Type '" + RedColor + "get-delay" + ResetColor + "' to get the current delay")
+	fmt.Println("Type '" + RedColor + "set-delay" + ResetColor + "' to set the current delay")
 	printHorizontalLine()
 }

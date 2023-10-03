@@ -31,11 +31,10 @@ func unicast(name, recipient, content string) {
 
 func multicast(name string, people map[string]string, content string, protocol string, timeout int, maxAttempts int) {
 	message := fmt.Sprintf("%s %s %s\n", protocol, name, content)
+	fmt.Println(GreenColor + centerText("Starting Multicast", 40) + ResetColor)
 	for _, recipient := range people {
-		fmt.Println(GreenColor + centerText("Sending Transmission", 40) + ResetColor)
-		fmt.Println("Status: Connected")
-		fmt.Printf("Protocol: %s\n", protocol)
-		fmt.Printf("Recipient: %s\n", recipient)
+		fmt.Printf("Status: Connected to %v\nProtocol: %v\n", recipient, protocol)
+		flag := 0
 		for i := 0; i < maxAttempts; i++ {
 			conn, err := net.Dial("tcp", recipient)
 			if err != nil {
@@ -58,10 +57,17 @@ func multicast(name string, people map[string]string, content string, protocol s
 				fmt.Println("Timeout: No Acknowledgement Received, Retrying...")
 			} else {
 				fmt.Println("Message Status: Acknowledged")
+				flag = 1
 				break
 			}
 		}
-		fmt.Println(GreenColor + centerText("End of Transmission", 40) + ResetColor)
+		if flag == 0 {
+			fmt.Println("Error: Max Attempts Reached - Multicast Failed")
+			fmt.Println(GreenColor + centerText("End of Multicast - FAILED", 40) + ResetColor)
+			return
+		}
 		printHorizontalLine()
 	}
+	fmt.Println(GreenColor + centerText("End of Multicast - SUCCESS", 40) + ResetColor)
+	printHorizontalLine()
 }
