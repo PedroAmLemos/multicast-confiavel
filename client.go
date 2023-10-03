@@ -17,7 +17,7 @@ func unicast(name, recipient, content string) {
 	defer conn.Close()
 	fmt.Println("Status: Connected")
 	fmt.Println("Protocol: unicast")
-	fmt.Printf("Recipient: %s\n", recipient)
+	fmt.Printf("Recipient: %s - %s\n", recipient, name)
 	message := fmt.Sprintf("%s %s %s\n", Unicast, name, content)
 	_, err = conn.Write([]byte(message))
 	if err != nil {
@@ -33,7 +33,7 @@ func multicast(name string, people map[string]string, content string, protocol s
 	message := fmt.Sprintf("%s %s %s\n", protocol, name, content)
 	fmt.Println(GreenColor + centerText("Starting Multicast", 40) + ResetColor)
 	for _, recipient := range people {
-		fmt.Printf("Status: Connected to %v\nProtocol: %v\n", recipient, protocol)
+		fmt.Printf("Status: Connected to %v - %v\nProtocol: %v\n", recipient, name, protocol)
 		flag := 0
 		for i := 0; i < maxAttempts; i++ {
 			conn, err := net.Dial("tcp", recipient)
