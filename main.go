@@ -6,9 +6,24 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
-var delay int = 2
+var delay int = 1
+var multicastDelay = 0
+
+type Node struct {
+	name            string
+	ip              string
+	isAlive         bool
+	isThisNode      bool
+	expectedTimeout float64
+	lastHeartbeat   time.Time
+}
+
+func NewNode(name string, ip string, isAlive bool, isThisNode bool, expectedTimeout float64) Node {
+	return Node{name, ip, isAlive, isThisNode, expectedTimeout, time.Time{}}
+}
 
 func readInput(prompt string) string {
 	fmt.Print(prompt)
@@ -28,66 +43,67 @@ func getArgs() (string, string) {
 	return name, fileName
 }
 
-func readFile(fileName string) map[string]string {
-	var lines []string
-	hosts, _ := os.Open(fileName)
-	defer hosts.Close()
-	scanner := bufio.NewScanner(hosts)
-	personMap := make(map[string]string)
-
+func readFile(fileName string, thisName string) map[string]Node {
+	nodes := make(map[string]Node)
+	file, err := os.Open(fileName)
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		os.Exit(1)
+	}
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
+		line := scanner.Text()
+		parts := strings.Split(line, " ")
+		if len(parts) == 2 {
+			ip := parts[0]
+			name := parts[1]
+			if name == thisName {
+				nodes["thisNode"] = NewNode(name, ip, true, true, DefaultIntervalForHeartbeat)
+			} else {
+				nodes[name] = NewNode(name, ip, true, false, DefaultIntervalForHeartbeat)
+			}
+		}
 	}
-	for _, line := range lines {
-		words := strings.Split(line, " ")
-		personMap[words[1]] = words[0]
-	}
-
-	return personMap
+	return nodes
 }
 
-func mainLoop(people map[string]string, name string) {
+func mainLoop(nodes map[string]Node) {
 	for {
 		protocol := readInput("> ")
 		switch protocol {
 		case "exit":
 			os.Exit(0)
 		case "list":
-			for name, ip := range people {
+			for name, ip := range nodes {
 				fmt.Printf("%s: %s\n", name, ip)
 			}
-		case Multicast, MulticastDelay:
+		case Multicast:
 			fmt.Printf("[%s] Enter the message: ", protocol)
 			message := readInput("")
-			fmt.Printf("[%s] Enter the max timeout (in seconds): ", protocol)
-			timeout := readInput("")
-			timeout = strings.TrimSpace(timeout)
-			timeoutInt, err := strconv.Atoi(timeout)
-			if err != nil {
-				fmt.Println("Error converting timeout to int:", err)
-				return
-			}
-			fmt.Printf("[%s] Enter the max attempts: ", protocol)
-			attempts := readInput("")
-			attempts = strings.TrimSpace(attempts)
-			attemptsInt, err := strconv.Atoi(attempts)
-			if err != nil {
-				fmt.Println("Error converting attempts to int:", err)
-				return
-			}
-			multicast(name, people, message, protocol, timeoutInt, attemptsInt)
+			multicast(nodes, message)
 		case Unicast:
-			recipient := readInput("[unicast] Enter the name of the person: ")
-			message := readInput("[unicast] Enter the message: ")
-			recipientIP := people[recipient]
-			unicast(name, recipientIP, message)
+			fmt.Println("Received unicast")
+			// recipient := readInput("[unicast] Enter the name of the person: ")
+			// message := readInput("[unicast] Enter the message: ")
+			// recipientIP := nodes[recipient]
+			// unicast(name, recipientIP, message)
 		case "clear":
 			fmt.Printf("\x1b[3;J\x1b[H\x1b[2J")
 		case "help":
 			printCommands()
-
 		case "get-delay":
 			fmt.Println(delay)
+		case "status":
+			for _, node := range nodes {
+				if !node.isThisNode {
+					fmt.Printf("\n%s: %s\n", node.name, node.ip)
+					fmt.Printf("isAlive: %v\n", node.isAlive)
+					fmt.Printf("expectedTimeout: %v seconds\n", node.expectedTimeout)
+					fmt.Printf("lastHeartbeat: %v\n", node.lastHeartbeat)
+				}
+			}
+
 		case "set-delay":
 			fmt.Print("Enter the delay: ")
 			delayStr := readInput("")
@@ -97,6 +113,17 @@ func mainLoop(people map[string]string, name string) {
 				return
 			}
 			delay = delayInt
+		case "set-multicast-delay":
+			fmt.Print("Enter the multicast delay: ")
+			delayStr := readInput("")
+			delayInt, err := strconv.Atoi(delayStr)
+			if err != nil {
+				fmt.Println("Error converting delay to int:", err)
+				continue
+			}
+			multicastDelay = delayInt
+		case "get-multicast-delay":
+			fmt.Println(multicastDelay)
 
 		default:
 			fmt.Println("command not found")
@@ -105,11 +132,11 @@ func mainLoop(people map[string]string, name string) {
 }
 
 func main() {
-	name, fileName := getArgs()
-	people := readFile(fileName)
-	thisIP := people[name]
-	delete(people, name)
-	printStartScreen(name, thisIP, people)
-	go mainLoop(people, name)
-	startServer(thisIP)
+	thisName, fileName := getArgs()
+	nodes := readFile(fileName, thisName)
+	printStartScreen(nodes)
+	go mainLoop(nodes)
+	go heartbeat(nodes)
+	// go checkHeartbeat(nodes)
+	startServer(nodes)
 }

@@ -9,7 +9,8 @@ import (
 	"time"
 )
 
-func startServer(ip string) {
+func startServer(nodes map[string]Node) {
+	ip := nodes["thisNode"].ip
 	const maxRetries = 3
 	retries := 0
 
@@ -29,7 +30,7 @@ func startServer(ip string) {
 				fmt.Println("Error accepting connection:", err)
 				continue
 			}
-			go handleConnection(conn)
+			go handleConnection(conn, nodes)
 		}
 	}
 
@@ -40,6 +41,7 @@ func startServer(ip string) {
 }
 
 func handleMulticast(name string, message string, protocol string, conn net.Conn) {
+	time.Sleep(time.Second * time.Duration(multicastDelay))
 	fmt.Println()
 	printHorizontalLine()
 	fmt.Println(BlueColor + centerText("Received Message", 40) + ResetColor)
@@ -59,10 +61,6 @@ func handleMulticast(name string, message string, protocol string, conn net.Conn
 	fmt.Print("> ")
 }
 
-func handleMulticastDelay(name string, message string) {
-	fmt.Println("Received multicast delay message")
-}
-
 func handleUnicast(name string, message string) {
 	fmt.Println()
 	printHorizontalLine()
@@ -75,7 +73,7 @@ func handleUnicast(name string, message string) {
 	fmt.Print("> ")
 }
 
-func handleConnection(conn net.Conn) {
+func handleConnection(conn net.Conn, nodes map[string]Node) {
 	defer conn.Close()
 	message, err := bufio.NewReader(conn).ReadString('\n')
 	if err != nil {
@@ -92,9 +90,32 @@ func handleConnection(conn net.Conn) {
 	name := parts[1]
 	actualMessage := parts[2]
 	switch protocol {
+	case Heartbeat:
+		node := nodes[name]
+		heartbeatTime := time.Now()
+		node.isAlive = true
+		if node.lastHeartbeat.IsZero() {
+			fmt.Printf("\nFirst heartbeat from %v... Marking it as alive\n> ", node.name)
+		} else {
+			expected := node.lastHeartbeat.Add(time.Duration(node.expectedTimeout) * time.Second)
+			if heartbeatTime.After(expected) {
+				diff := heartbeatTime.Sub(expected)
+				if diff > time.Duration(time.Millisecond*2) {
+					node.expectedTimeout = node.expectedTimeout + diff.Seconds()
+					fmt.Printf("\nReceived heartbeat from %v after expected timeout. Adjusting timeout to %v.\n> ", node.name, node.expectedTimeout)
+				}
+			} else if heartbeatTime.Before(expected) {
+				diff := expected.Sub(heartbeatTime)
+				if diff > time.Duration(time.Millisecond*2) {
+					node.expectedTimeout = node.expectedTimeout - diff.Seconds()
+					fmt.Printf("\nReceived heartbeat from %v before expected timeout. Adjusting timeout to %v.\n> ", node.name, node.expectedTimeout)
+				}
+			}
+		}
+		node.lastHeartbeat = heartbeatTime
+		nodes[name] = node
+
 	case Multicast:
-		handleMulticast(name, actualMessage, protocol, conn)
-	case MulticastDelay:
 		handleMulticast(name, actualMessage, protocol, conn)
 	case Unicast:
 		handleUnicast(name, actualMessage)
@@ -104,4 +125,57 @@ func handleConnection(conn net.Conn) {
 	}
 }
 
-// TODO: implement
+func heartbeat(nodes map[string]Node) {
+	thisName := nodes["thisNode"].name
+	count := 0
+	for {
+		count++
+		for _, node := range nodes {
+			if !node.isThisNode && (node.isAlive || count%10 == 0) {
+				conn, err := net.Dial("tcp", node.ip)
+				if err != nil {
+					fmt.Printf("\nError connecting to %v: %v\n> ", node.name, err)
+					if node.isAlive {
+						fmt.Printf("\nMarking %v as dead and continuing...\n> ", node.name)
+					}
+					currentNode := nodes[node.name]
+					currentNode.isAlive = false
+					currentNode.lastHeartbeat = time.Time{}
+					currentNode.expectedTimeout = DefaultIntervalForHeartbeat
+					nodes[node.name] = currentNode
+					continue
+				}
+				hbMessage := fmt.Sprintf("%s %s PING\n", Heartbeat, thisName)
+				_, err = conn.Write([]byte(hbMessage))
+				if err != nil {
+					fmt.Printf("\nError sending message: %v\n> ", err)
+					continue
+				}
+				conn.Close()
+			}
+		}
+		if delay > 0 {
+			time.Sleep(time.Duration(delay) * time.Second)
+		} else {
+			time.Sleep(time.Duration(DefaultIntervalForHeartbeat) * time.Second)
+		}
+	}
+}
+
+func checkHeartbeat(nodes map[string]Node) {
+	for {
+		fmt.Printf("\nChecking heartbeat...\n> ")
+		for _, node := range nodes {
+			if !node.isThisNode && node.isAlive && node.lastHeartbeat != (time.Time{}) {
+				expected := node.lastHeartbeat.Add(time.Duration(node.expectedTimeout*2) * time.Second)
+				if time.Now().After(expected) {
+					fmt.Printf("\nNode %v did not send a heartbeat for more then 2 * expectedInterval. Marking as dead.\n> ", node.name)
+					currentNode := nodes[node.name]
+					currentNode.isAlive = false
+					nodes[node.name] = currentNode
+				}
+			}
+		}
+		time.Sleep(15 * time.Second)
+	}
+}

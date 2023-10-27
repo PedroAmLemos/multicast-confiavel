@@ -29,45 +29,63 @@ func unicast(name, recipient, content string) {
 	printHorizontalLine()
 }
 
-func multicast(name string, people map[string]string, content string, protocol string, timeout int, maxAttempts int) {
-	message := fmt.Sprintf("%s %s %s\n", protocol, name, content)
+func multicast(nodes map[string]Node, messageContent string) {
+	message := fmt.Sprintf("%s %s %s\n", Multicast, nodes["thisNode"].name, messageContent)
 	fmt.Println(GreenColor + centerText("Starting Multicast", 40) + ResetColor)
-	for _, recipient := range people {
-		fmt.Printf("Status: Connected to %v - %v\nProtocol: %v\n", recipient, name, protocol)
-		flag := 0
-		for i := 0; i < maxAttempts; i++ {
-			conn, err := net.Dial("tcp", recipient)
+	fmt.Printf("\nMessage Content: %s\n", message)
+	receivedACK := make(map[string]bool)
+	for _, node := range nodes {
+		printHorizontalLine()
+		if node.isThisNode {
+			continue
+		}
+		if node.isAlive {
+			conn, err := net.Dial("tcp", node.ip)
 			if err != nil {
-				fmt.Println("Error connecting to recipient:", err)
-				return
+				fmt.Printf("\nError connecting to %v: %v\n", node.name, err)
+				continue
 			}
-			defer conn.Close()
+			fmt.Printf("Status: Connected to %v - %v\nProtocol: Multicast\n", node.name, node.ip)
 			_, err = conn.Write([]byte(message))
 			if err != nil {
-				fmt.Println("Error sending message:", err)
-				return
+				fmt.Printf("\nError sending message to %v: %v\n", node.name, err)
+				continue
 			}
-			fmt.Println("Message Status: Sent - Waiting for Acknowledgement")
-			timeoutACK := time.Duration(timeout)*time.Second + (time.Duration(i) * time.Second)
-			fmt.Println("Timeout: ", timeoutACK)
-			conn.SetReadDeadline(time.Now().Add(timeoutACK))
-			buffer := make([]byte, 1024)
-			_, err = conn.Read(buffer)
+			fmt.Printf("Message Status: Sent to %v\n", node.name)
+			err = conn.SetReadDeadline(time.Now().Add(time.Duration(node.expectedTimeout) * time.Second * 2).Add(time.Millisecond * 2))
 			if err != nil {
-				fmt.Println("Timeout: No Acknowledgement Received, Retrying...")
+				fmt.Printf("\nError setting read deadline: %v\n", err)
+				continue
 			} else {
-				fmt.Println("Message Status: Acknowledged")
-				flag = 1
-				break
+				fmt.Printf("Read deadline set to %v seconds (expected timeout (%v) * 2)\n", node.expectedTimeout*2, node.expectedTimeout)
+				_, err = conn.Read(make([]byte, 1024))
+				if err != nil {
+					fmt.Printf("\nError reading from %v: %v\n", node.name, err)
+					receivedACK[node.name] = false
+					continue
+				}
+				fmt.Printf("Message Status: Received ACK from %v\n", node.name)
+				receivedACK[node.name] = true
 			}
+		} else {
+			fmt.Printf("Status: %v is not alive\nProtocol: Multicast\n", node.name)
+			fmt.Printf("Message Status: Not sent to %v\n", node.name)
+			fmt.Printf("Reason: %v is not alive\n", node.name)
+			fmt.Printf("Continuing to next node...\n")
+			receivedACK[node.name] = false
+			continue
 		}
-		if flag == 0 {
-			fmt.Println("Error: Max Attempts Reached - Multicast Failed")
-			fmt.Println(GreenColor + centerText("End of Multicast - FAILED", 40) + ResetColor)
-			return
-		}
-		printHorizontalLine()
+
 	}
-	fmt.Println(GreenColor + centerText("End of Multicast - SUCCESS", 40) + ResetColor)
+	fmt.Println(GreenColor + centerText("End of Multicast", 40) + ResetColor)
+	printHorizontalLine()
+	fmt.Printf("MULTICAST REPORT\n")
+	for name, ack := range receivedACK {
+		if ack {
+			fmt.Printf("%v: ACK\n", name)
+		} else {
+			fmt.Printf("%v: NACK\n", name)
+		}
+	}
 	printHorizontalLine()
 }
