@@ -74,20 +74,15 @@ func mainLoop(nodes map[string]Node) {
 		switch protocol {
 		case "exit":
 			os.Exit(0)
-		case "list":
-			for name, ip := range nodes {
-				fmt.Printf("%s: %s\n", name, ip)
-			}
 		case Multicast:
 			fmt.Printf("[%s] Enter the message: ", protocol)
 			message := readInput("")
 			multicast(nodes, message)
 		case Unicast:
 			fmt.Println("Received unicast")
-			// recipient := readInput("[unicast] Enter the name of the person: ")
-			// message := readInput("[unicast] Enter the message: ")
-			// recipientIP := nodes[recipient]
-			// unicast(name, recipientIP, message)
+			recipientName := readInput("[unicast] Enter the name of the person: ")
+			message := readInput("[unicast] Enter the message: ")
+			unicast(recipientName, nodes, message)
 		case "clear":
 			fmt.Printf("\x1b[3;J\x1b[H\x1b[2J")
 		case "help":

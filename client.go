@@ -6,22 +6,24 @@ import (
 	"time"
 )
 
-func unicast(name, recipient, content string) {
+func unicast(receiverName string, nodes map[string]Node, content string) {
+	receiverIp := nodes[receiverName].ip
+	thisName := nodes["thisNode"].name
 	printHorizontalLine()
 	fmt.Println(GreenColor + centerText("Sending Transmission", 40) + ResetColor)
-	conn, err := net.Dial("tcp", recipient)
+	conn, err := net.Dial("tcp", receiverIp)
 	if err != nil {
-		fmt.Println("Error connecting to recipient:", err)
+		fmt.Printf("\nError connecting to %v: %v\n", receiverName, err)
 		return
 	}
 	defer conn.Close()
 	fmt.Println("Status: Connected")
 	fmt.Println("Protocol: unicast")
-	fmt.Printf("Recipient: %s - %s\n", recipient, name)
-	message := fmt.Sprintf("%s %s %s\n", Unicast, name, content)
+	fmt.Printf("Recipient: %s - %s\n", receiverIp, receiverName)
+	message := fmt.Sprintf("%s %s %s\n", Unicast, thisName, content)
 	_, err = conn.Write([]byte(message))
 	if err != nil {
-		fmt.Println("Error sending message:", err)
+		fmt.Println("Error sending message: ", err)
 		return
 	}
 	fmt.Println("Message Status: Sent")
