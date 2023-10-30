@@ -22,7 +22,9 @@ func printStartScreen(nodes map[string]Node) {
 	fmt.Printf(YellowColor+"Your IP is: %v\n"+ResetColor, nodes["thisNode"].ip)
 	fmt.Println(MagentaColor + "People found in the file: " + ResetColor)
 	for _, node := range nodes {
-		fmt.Printf("%s: %s\n", node.name, node.ip)
+		if !node.isThisNode {
+			fmt.Printf("%s: %s\n", node.name, node.ip)
+		}
 	}
 	fmt.Println("Type " + RedColor + "'help'" + ResetColor + " to see the list of commands")
 	printHorizontalLine()

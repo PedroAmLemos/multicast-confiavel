@@ -9,8 +9,10 @@ import (
 	"time"
 )
 
-var delay int = 1
-var multicastDelay = 0
+var (
+	delay          int = 1
+	multicastDelay     = 0
+)
 
 type Node struct {
 	name            string
